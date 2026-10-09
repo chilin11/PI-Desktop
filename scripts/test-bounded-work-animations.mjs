@@ -28,11 +28,14 @@ body { background: #181818; color: #eee; padding: 20px; }
 <span id="spinner" class="tool-spinner"></span>
 <div class="assistant-turn-fragment smooth-cursor"><div class="prose-chat"><p id="cursor">Streaming text</p></div></div>
 <span id="scheduled" class="scheduled-task-live">Running</span>
+<div class="session-switch-progress"><span id="switch-progress"></span></div>
+<div class="plugins-install-bar is-indeterminate"><span id="install-progress" class="plugins-install-bar-fill"></span></div>
 <button id="stop">Stop</button>
 <script>
 window.samples = [
  ['working', null], ['label', '::after'], ['subagent', null],
- ['run-dot', null], ['spinner', null], ['cursor', '::after'], ['scheduled', null]
+ ['run-dot', null], ['spinner', null], ['cursor', '::after'], ['scheduled', null],
+ ['switch-progress', null], ['install-progress', null]
 ];
 window.readMarkers = () => samples.map(([id, pseudo]) => {
  const element = document.getElementById(id);
@@ -123,12 +126,29 @@ try {
     assert.notEqual(marker.display, "none");
     assert.notEqual(marker.visibility, "hidden");
   }
+  for (const id of ["switch-progress", "install-progress"]) {
+    assert.equal(await evaluate(`getComputedStyle(document.getElementById('${id}')).transform`),
+      "matrix(1, 0, 0, 1, 0, 0)", `${id} must stay in view after settling`);
+  }
   await evaluate("document.getElementById('elapsed').textContent = '60s'; document.getElementById('cursor').textContent = 'More streamed text';");
   assert.equal(await evaluate("document.getAnimations().filter(a => a.playState === 'running').length"), 0,
     "text and elapsed-time changes must not restart decorative animations");
   await evaluate("document.getElementById('run').classList.remove('is-running'); void document.getElementById('run').offsetWidth; document.getElementById('run').classList.add('is-running');");
   assert.ok(await evaluate("document.getAnimations().some(a => a.animationName === 'tool-row-state-pulse' && a.playState === 'running')"),
     "a new running state should retain its short animation cue");
+  await evaluate(`const pane = document.createElement('div');
+    pane.className = 'session-pane'; pane.dataset.visible = 'true';
+    pane.innerHTML = '<span class="tool-spinner"></span><span class="tool-row-name running">Hidden</span>';
+    document.body.appendChild(pane);`);
+  assert.equal(await evaluate(`document.getAnimations().filter(a =>
+    a.effect.target.closest('.session-pane')).length`), 2);
+  await evaluate(`document.querySelector('.session-pane').dataset.visible = 'false'`);
+  assert.deepEqual(await evaluate(`(() => { const pane = document.querySelector('.session-pane');
+    return [getComputedStyle(pane.querySelector('.tool-spinner')).animationPlayState,
+     getComputedStyle(pane.querySelector('.tool-row-name'), '::after').animationPlayState]; })()`),
+    ['paused', 'paused']);
+  assert.equal(await evaluate(`document.getAnimations().filter(a =>
+    a.effect.target.closest('.session-pane') && a.playState === 'running').length`), 0);
   await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
   await navigate();
   assert.equal(await evaluate("document.getAnimations().filter(a => a.playState === 'running').length"), 0,

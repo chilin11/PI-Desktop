@@ -10570,6 +10570,18 @@ This test plan spec is accepted when:
   override with `CHROME_BIN`). The isolated browser fixture verifies animation
   lifecycles, not native vibrancy or whole-system GPU utilization. Native macOS
   GPU comparison remains a separate manual check.
+- Fork follow-up: open empty home in both themes and confirm only the static
+  first-frame artwork loads. Exercise model discovery, plugin installation,
+  settings toggles, startup, voice and Mermaid loading: decorative motion is
+  bounded to two cycles while status remains visible. Switch away from a
+  running retained pane and confirm descendant/pseudo animations are paused,
+  without dropping scroll state. Run `fork-idle-motion.test.mjs` and the
+  Chromium fixture. This does not certify plugin-owned animations or native
+  GPU performance. For the ad-hoc macOS artifact, verify `PI-Desktop Fork.app`
+  identity, sealed signature, Rust signature and usage description; then test
+  actual LAN provider access with upstream quit. No OS grant is assumed from
+  signing/plist checks. Gatekeeper and LAN authorization remain on-device
+  checks; Developer ID/notarization require Apple-issued credentials.
 
 ### US-UI-68 Session-scoped inline permissions and artifacts (D138/D142)
 - Run two sessions concurrently and keep A visible while B reaches a tool

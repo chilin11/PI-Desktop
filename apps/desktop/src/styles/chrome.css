@@ -113,7 +113,7 @@
   height: 100%;
   border-radius: inherit;
   background: color-mix(in oklab, var(--ds-text-primary) 55%, transparent);
-  animation: startup-bar 1.1s var(--motion-ease-standard) infinite;
+  animation: startup-bar 1.1s var(--motion-ease-standard) 2;
 }
 
 @keyframes startup-splash-in {
