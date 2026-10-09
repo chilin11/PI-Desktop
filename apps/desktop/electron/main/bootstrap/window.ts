@@ -178,22 +178,23 @@ export async function createWindow({
     // The traffic-light position comes from @pi-desktop/shared so the space
     // the renderer reserves for the buttons (styles/tokens.css) is derived
     // from the same numbers that place them.
+    // The window is opaque on every platform. A transparent window over the
+    // native `sidebar` vibrancy material makes WindowServer re-blend the whole
+    // window with the blurred desktop on every frame Chromium submits, so
+    // ordinary typing and streaming kept the GPU at ~30-50% on macOS while the
+    // same frames on an opaque window cost a few percent.
     ...(process.platform === "darwin"
       ? {
           titleBarStyle: "hiddenInset" as const,
           trafficLightPosition: MAC_TRAFFIC_LIGHT_POSITION,
-          vibrancy: "sidebar" as const,
-          visualEffectState: "followWindow" as const,
-          transparent: true,
-          backgroundColor: "#00000000",
         }
       : {
           frame: false,
           ...(process.platform === "win32" ? { thickFrame: false } : {}),
-          backgroundColor: builtinWindowBackground(
-            nativeTheme.shouldUseDarkColors ? "dark" : "light",
-          ),
         }),
+    backgroundColor: builtinWindowBackground(
+      nativeTheme.shouldUseDarkColors ? "dark" : "light",
+    ),
     ...(process.platform === "win32"
       ? {
           icon: windowsIconPath(),
