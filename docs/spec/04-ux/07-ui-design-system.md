@@ -281,10 +281,17 @@ re-composited even when nothing is happening: the permission dot on a
 session waiting for approval, the plan-mode chip in the composer toolbar,
 and the warning dot on the backend banner each play two cycles and then
 hold a steady state that carries the meaning by itself (purple fill,
-planning-tinted icon, warning fill). Only indicators that describe work in
-flight — a streaming cursor, a running tool row, a recording microphone —
-may animate for as long as that work lasts. Reduced-motion mode disables
-all of them.
+planning-tinted icon, warning fill). Decorative transcript work indicators
+also play only two cycles: the Working dots, active thinking/tool label marker,
+subagent-creation dot, run-row status dot, tool spinner, and streaming cursor.
+The scheduled-task live marker follows the same bound. Each then restores its
+visible static style while labels, elapsed time, Stop controls, and actual
+streamed content continue updating. Text/timer updates must not restart these
+animations; entering a new running state may replay the bounded cue. Window
+transparency, native vibrancy, layout, colors, and task execution are unchanged.
+Recording and other loading surfaces outside this transcript/scheduled scope
+retain their existing motion policy. Reduced-motion mode disables these cues
+from the first frame.
 
 ### 4.6 Tailwind CSS variable stub
 

@@ -10556,6 +10556,20 @@ This test plan spec is accepted when:
   plan-mode chip, or the warning dot has an active animation, and recording an
   otherwise idle native macOS window shows no continuous frames from them.
   Under reduced motion all three are static from the first painted frame.
+- Keep a long-running transcript visible with Working dots, an active tool label,
+  a creating subagent, a run-row status dot, a tool spinner, and a streaming
+  cursor. Repeat with a live scheduled task. Each decorative animation plays
+  twice and settles within 3.2 seconds (including the Working-dot stagger).
+  Labels, elapsed time, Stop controls, streamed text, and task outcomes remain
+  available; updating text or elapsed time does not restart the animation.
+  Enter a new running state and confirm the short cue can replay. Repeat under
+  reduced motion: markers are static from the first frame. Preserve window
+  glass, geometry, colors, and task execution. Automation:
+  `node --test apps/desktop/test/bounded-work-animations.test.mjs` and
+  `node scripts/test-bounded-work-animations.mjs` (Chrome/Chromium required;
+  override with `CHROME_BIN`). The isolated browser fixture verifies animation
+  lifecycles, not native vibrancy or whole-system GPU utilization. Native macOS
+  GPU comparison remains a separate manual check.
 
 ### US-UI-68 Session-scoped inline permissions and artifacts (D138/D142)
 - Run two sessions concurrently and keep A visible while B reaches a tool
