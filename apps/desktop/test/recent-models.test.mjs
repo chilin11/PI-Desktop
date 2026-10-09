@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { loadRecentModels, rememberModelInList, saveRecentModels } from "../src/lib/recent-models.ts";
+import { loadRecentModels, rememberedThinkingLevel, rememberModelInList, saveRecentModels } from "../src/lib/recent-models.ts";
 import { availableRecentModels, inheritedSessionModelBinding, pinnedSessionModelBinding } from "../src/lib/session-model.ts";
 
 const ref = (providerId, modelId) => ({ providerId, modelId });
@@ -63,5 +63,27 @@ test("corrupt local preferences are ignored and history remains bounded", () => 
     for (let i = 0; i < 30; i++) history = rememberModelInList(history, ref("a", String(i)));
     assert.equal(history.length, 20);
     assert.equal(history[0].modelId, "29");
+  } finally { globalThis.localStorage = old; }
+});
+
+test("recent models remember the reasoning level of the latest send", () => {
+  const old = globalThis.localStorage;
+  const data = new Map();
+  globalThis.localStorage = { getItem: key => data.get(key), setItem: (key, value) => data.set(key, value) };
+  try {
+    // Pre-existing entries without a level keep loading.
+    data.set("pi.desktop.recentModels", JSON.stringify([ref("a", "one"), { ...ref("b", "one"), thinkingLevel: "turbo" }]));
+    assert.deepEqual(loadRecentModels(), [ref("a", "one"), ref("b", "one")]);
+
+    let list = rememberModelInList([], { ...ref("a", "one"), thinkingLevel: "high" });
+    list = rememberModelInList(list, { ...ref("b", "one"), thinkingLevel: "omit" });
+    // A later send with the same model replaces the remembered level.
+    list = rememberModelInList(list, { ...ref("a", "ONE"), thinkingLevel: "low" });
+    saveRecentModels(list);
+    const restored = loadRecentModels();
+    assert.deepEqual(restored, [{ ...ref("a", "ONE"), thinkingLevel: "low" }, { ...ref("b", "one"), thinkingLevel: "omit" }]);
+    assert.equal(rememberedThinkingLevel(restored, ref("a", "one")), "low");
+    assert.equal(rememberedThinkingLevel(restored, ref("b", "one")), "omit");
+    assert.equal(rememberedThinkingLevel(restored, ref("a", "two")), undefined);
   } finally { globalThis.localStorage = old; }
 });
