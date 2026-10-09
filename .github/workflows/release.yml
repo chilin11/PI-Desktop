@@ -220,10 +220,20 @@ jobs:
         env:
           # Debug only: complete bundle signing, not Developer ID/notarization.
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        working-directory: apps/desktop
         run: |
           set -euo pipefail
-          pnpm --filter @pi-desktop/desktop run dist:mac -- --${{ matrix.arch }} \
+          pnpm run build:deps
+          pnpm run build:host-release
+          pnpm run bundle:runtime
+          pnpm exec electron-vite build
+          # Call electron-builder directly: `pnpm run dist:mac -- <args>`
+          # forwards a literal `--`, after which electron-builder ignores
+          # `--config`, silently packaging the upstream identity unsigned.
+          pnpm exec electron-builder --mac --${{ matrix.arch }} --publish never \
             --config build/fork-debug.cjs
+          # Fail fast if the fork identity was not applied.
+          ls -d release/mac*/"PI-Desktop Fork.app"
 
       - name: Diagnose macOS signing environment
         # Records the runner baseline (system, codesign, identities, keychain,

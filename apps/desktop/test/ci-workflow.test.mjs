@@ -240,7 +240,7 @@ test("release matrix packages both native macOS architectures", () => {
   );
   assert.match(
     releaseWorkflowSource,
-    /Package ad-hoc signed macOS test installer[\s\S]*?pnpm --filter @pi-desktop\/desktop run dist:mac -- --\$\{\{ matrix\.arch \}\}/,
+    /Package ad-hoc signed macOS test installer[\s\S]*?pnpm exec electron-builder --mac --\$\{\{ matrix\.arch \}\} --publish never/,
     "ad-hoc macOS builds use the shared artifact naming config",
   );
   assert.doesNotMatch(
