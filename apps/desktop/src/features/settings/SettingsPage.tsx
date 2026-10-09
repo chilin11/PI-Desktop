@@ -522,9 +522,9 @@ export function SettingsPage() {
                   description={t("settings.smoothStreamingDesc")}
                 >
                   <SettingsToggle
-                    checked={settings.smoothStreaming !== false}
+                    checked={settings.smoothStreaming === true}
                     label={t("settings.smoothStreaming")}
-                    onChange={() => void saveSettings({ smoothStreaming: !(settings.smoothStreaming !== false) })}
+                    onChange={() => void saveSettings({ smoothStreaming: settings.smoothStreaming !== true })}
                   />
                 </SettingsRow>
                 <LargePasteThresholdRow
