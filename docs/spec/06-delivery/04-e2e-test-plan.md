@@ -6841,6 +6841,9 @@ must keep splitting are covered by `markdown-blocks.test.mjs`.
   12. After a recovered tool response, keep the next response failing. Verify
       it receives ten fresh retries and terminates once with `retryAttempt: 10`.
       Restore the fixture, click Continue, and verify completion in the UI.
+  13. With `PI_DESKTOP_STREAM_IDLE_TIMEOUT_MS` unset, hold a provider response
+      silent for four minutes, then release its answer. Repeat for a builtin
+      subagent. Repeat once more and press Stop while the response is silent.
 - **Expected**:
   - `terminated` is classified as `STREAM_FAILED`, and an upstream gateway
     `502`/`503`/`504` as retryable `PROVIDER_ERROR`.
@@ -6885,6 +6888,10 @@ must keep splitting are covered by `markdown-blocks.test.mjs`.
     above. Infinite mode changes no classification and only removes the retry
     ceiling for admitted network/transient failures; it remains abortable and
     is visibly marked with an unbounded retry indicator.
+  - A silent response has no default three-minute cutoff: the original request
+    completes without replay, duplicate billing, or a terminal error. Stop still
+    cancels the pending request. An explicit positive environment override may
+    enable the idle watchdog; tool execution budgets are unchanged.
 - **Specs linked**: `03-runtime/01-ipc-protocol.md`,
   `03-runtime/02-agent-runtime.md`, `03-runtime/08-error-codes.md`,
   `08-meta/decisions-log.md` (D186, D259, D378), ADR 0050, ADR 0128, ADR 0206
@@ -6896,6 +6903,9 @@ must keep splitting are covered by `markdown-blocks.test.mjs`.
   and eleven-tool-round recovery run in `scripts/e2e-provider-recovery.mjs`.
   Existing classification coverage: `agent-errors.test.ts`,
   `provider-retry.test.ts`, `runtime.test.ts`, `subagent.test.ts`.
+  Four-minute silent completion for sessions/subagents and Stop while silent
+  are covered by `provider-recovery-flow.test.ts` using controlled clocks and
+  the real provider adapter/agent loop; the full Desktop silence variant is Draft.
   Other scenario variants remain Draft.
 
 #### E2E-1174: Return a paired tool denial in Plan/Goal

@@ -17,14 +17,15 @@ const provider: RuntimeProviderConfig = {
 };
 
 type Failure = "network" | "rate-limit" | "stream";
-type Step = Failure | "tool" | "success";
+type Step = Failure | "tool" | "success" | "silent-success";
 
 /** Real provider adapter and agent loop; replace only fetch and the host edge. */
 function fixture(steps: Step[]) {
   let requests = 0;
   let reads = 0;
   const events: AgentEventEnvelope[] = [];
-  const fetch = vi.fn(async (): Promise<Response> => {
+  let releaseSilent = () => {};
+  const fetch = vi.fn(async (_input: unknown, init?: RequestInit): Promise<Response> => {
     const step = steps[requests++];
     if (!step) throw new Error("Unexpected provider request");
     if (step === "network") throw new TypeError("fetch failed");
@@ -49,6 +50,33 @@ function fixture(steps: Step[]) {
         : { role: "assistant", content: step === "stream" ? "partial" : "Recovered" };
     const chunk = (value: unknown, finish: string | null) =>
       `data: ${JSON.stringify({ id: "completion", object: "chat.completion.chunk", created: 1, model: "fixture-model", choices: [{ index: 0, delta: value, finish_reason: finish }] })}\n\n`;
+    if (step === "silent-success") {
+      const signal = init?.signal;
+      return new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            let closed = false;
+            const abort = () => {
+              if (closed) return;
+              closed = true;
+              controller.error(new DOMException("Aborted", "AbortError"));
+            };
+            signal?.addEventListener("abort", abort, { once: true });
+            releaseSilent = () => {
+              if (closed) return;
+              closed = true;
+              signal?.removeEventListener("abort", abort);
+              controller.enqueue(new TextEncoder().encode(
+                chunk(delta, null) + chunk({}, "stop") + "data: [DONE]\n\n",
+              ));
+              controller.close();
+            };
+            if (signal?.aborted) abort();
+          },
+        }),
+        { headers: { "content-type": "text/event-stream" } },
+      );
+    }
     if (step === "stream") {
       let sent = false;
       return new Response(
@@ -122,7 +150,7 @@ function fixture(steps: Step[]) {
     ],
     onEvent: (event) => events.push(event),
   });
-  return { runtime, subagent, events, requests: () => requests, reads: () => reads };
+  return { runtime, subagent, events, requests: () => requests, reads: () => reads, releaseSilent: () => releaseSilent() };
 }
 
 async function settle<T>(promise: Promise<T>): Promise<T> {
@@ -146,10 +174,63 @@ async function settle<T>(promise: Promise<T>): Promise<T> {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
   vi.useRealTimers();
 });
 
 describe("provider recovery through real agent loops (#699)", () => {
+  for (const owner of ["session", "subagent"] as const) {
+    it(`${owner} completes the original request after more than three silent minutes by default`, async () => {
+      vi.useFakeTimers();
+      vi.stubEnv("PI_DESKTOP_STREAM_IDLE_TIMEOUT_MS", undefined);
+      const f = fixture(["silent-success"]);
+      const run = owner === "session"
+        ? f.runtime.prompt("Think carefully, then report.")
+        : f.subagent.run();
+      try {
+        await vi.advanceTimersByTimeAsync(240_000);
+        expect(f.requests()).toBe(1);
+        expect(f.events.filter((e) => e.event.type === "error")).toHaveLength(0);
+        expect(f.events.filter((e) => e.event.type === "agent_end")).toHaveLength(0);
+        if (owner === "session") expect(f.runtime.getStatus().isRunning).toBe(true);
+        f.releaseSilent();
+        const result = await settle<Awaited<typeof run>>(run);
+        expect(f.requests()).toBe(1);
+        expect(f.events.some((e) => e.event.type === "message_end" &&
+          e.event.message.content === "Recovered" && e.event.message.status === "complete")).toBe(true);
+        if (owner === "session") {
+          expect(f.events.filter((e) => e.event.type === "agent_end")).toHaveLength(1);
+        } else {
+          expect(result).toMatchObject({ status: "completed", report: "Recovered" });
+        }
+      } finally {
+        f.releaseSilent();
+        await run;
+        await f.runtime.dispose();
+      }
+    });
+  }
+
+  it("user Stop still cancels a silent provider request with the default watchdog disabled", async () => {
+    vi.useFakeTimers();
+    vi.stubEnv("PI_DESKTOP_STREAM_IDLE_TIMEOUT_MS", undefined);
+    const f = fixture(["silent-success"]);
+    const run = f.runtime.prompt("Think carefully, then report.");
+    try {
+      await vi.advanceTimersByTimeAsync(240_000);
+      expect(f.runtime.getStatus().isRunning).toBe(true);
+      await f.runtime.abort();
+      await settle(run);
+      expect(f.requests()).toBe(1);
+      expect(f.runtime.getStatus().isRunning).toBe(false);
+      expect(f.events.filter((e) => e.event.type === "agent_end")).toHaveLength(1);
+      expect(f.events.filter((e) => e.event.type === "error")).toHaveLength(0);
+    } finally {
+      f.releaseSilent();
+      await run;
+      await f.runtime.dispose();
+    }
+  });
   for (const owner of ["session", "subagent"] as const) {
     for (const failure of ["network", "rate-limit", "stream"] as const) {
       it(`${owner} recovers independent ${failure} outages across eleven successful tool rounds`, async () => {

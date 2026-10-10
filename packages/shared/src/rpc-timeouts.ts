@@ -18,11 +18,11 @@ export const TOOL_QUEUE_WAIT_MS = 30_000;
  */
 export const DESKTOP_TOOL_DISPATCH_TIMEOUT_MS = 150_000;
 /**
- * The sidecar's zero-event stream watchdog. Mirrors
- * `STREAM_IDLE_TIMEOUT_DEFAULT_MS` in
- * `packages/agent-runtime/src/provider-retry.ts`: a provider stream that emits
- * nothing for this long is ended as a retriable failure instead of leaving the
- * caller hung on a connection the provider never closes.
+ * Historical per-attempt estimate retained for the compaction RPC budget.
+ * This is not the provider stream's default idle deadline: that watchdog is
+ * disabled unless `PI_DESKTOP_STREAM_IDLE_TIMEOUT_MS` explicitly enables it.
+ * Keep the exported value for compatibility and do not collapse compaction's
+ * separate transport budget when disabling the stream watchdog.
  */
 export const STREAM_IDLE_TIMEOUT_MS = 180_000;
 /**
@@ -36,13 +36,12 @@ export const COMPACTION_SUMMARY_RETRY_BUDGET_MS = 14_000;
 /**
  * `agent.compact` is a blocking RPC that spends a whole model request inside
  * the sidecar: pi serializes the conversation into one summary prompt, streams
- * the summary, and may retry a transient failure. No part of that budget is a
- * wall clock the transport can read, so this deadline is derived from the
- * ceilings the sidecar does enforce — an attempt that stops producing events is
- * cut by its stream watchdog, and the retries add at most
- * `COMPACTION_SUMMARY_RETRY_BUDGET_MS` of backoff:
+ * the summary, and may retry a transient failure. Its transport deadline uses
+ * the historical per-attempt estimate below, not a guaranteed runtime ceiling:
+ * provider streams no longer have a default idle watchdog. Summary retries add
+ * at most `COMPACTION_SUMMARY_RETRY_BUDGET_MS` of backoff:
  *
- *   (1 + retries) * stream watchdog + retry backoff + transport slack
+ *   (1 + retries) * attempt estimate + retry backoff + transport slack
  *
  * With the flat 130s default Electron gave up while the sidecar was still
  * summarizing a large context (~158s), reported a failed compaction, and the

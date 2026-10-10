@@ -1034,11 +1034,16 @@ describe("opaque bad-request repair", () => {
 });
 
 describe("stream idle watchdog", () => {
-  it("reads the idle budget from the environment with a safe default", () => {
+  it("disables the idle watchdog by default and accepts an explicit budget", () => {
     const previous = process.env.PI_DESKTOP_STREAM_IDLE_TIMEOUT_MS;
     try {
       delete process.env.PI_DESKTOP_STREAM_IDLE_TIMEOUT_MS;
       expect(streamIdleTimeoutMs()).toBe(STREAM_IDLE_TIMEOUT_DEFAULT_MS);
+      expect(STREAM_IDLE_TIMEOUT_DEFAULT_MS).toBe(0);
+      for (const value of ["", "   ", "-1", "Infinity", "not-a-number"]) {
+        process.env.PI_DESKTOP_STREAM_IDLE_TIMEOUT_MS = value;
+        expect(streamIdleTimeoutMs()).toBe(0);
+      }
       process.env.PI_DESKTOP_STREAM_IDLE_TIMEOUT_MS = "45000";
       expect(streamIdleTimeoutMs()).toBe(45_000);
       process.env.PI_DESKTOP_STREAM_IDLE_TIMEOUT_MS = "0";
