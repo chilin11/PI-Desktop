@@ -7600,3 +7600,15 @@ must keep splitting are covered by `markdown-blocks.test.mjs`.
 - Covered by `apps/desktop/test/session-title-prompt-fallback.test.mjs`,
   `apps/desktop/test/queue-pending-actions.test.mjs`, the host-core
   `derive_session_title` tests, and E2E-021a. See ADR 0323.
+
+## Provider stream idle deadline is opt-in
+
+- Default `STREAM_IDLE_TIMEOUT_DEFAULT_MS` to `0`: a model's silence is not
+  evidence of failure, so main-session and builtin-subagent requests may think
+  for more than three minutes without automatic cancellation or replay.
+- Preserve `PI_DESKTOP_STREAM_IDLE_TIMEOUT_MS` as an explicit opt-in budget;
+  positive values retain the retry-backoff floor. User Stop, disposal, actual
+  provider-error recovery, tool execution budgets, and the separate compaction
+  RPC deadline are unchanged.
+- Coverage: runtime spec §5d and E2E-096; deterministic real-agent-loop tests
+  cover four-minute silence, original-request completion, and explicit Stop.

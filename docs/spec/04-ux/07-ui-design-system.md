@@ -125,14 +125,11 @@ Codex as a visual reference. The identity contract is deliberately small:
   and NSIS shortcut identity stay aligned so native notifications,
   notification settings, and taskbar groups identify the app as `PI-Desktop`
   rather than Electron.
-- The empty-home hero uses a 100px `HomeMascotLogo` GIF: an eight-frame waving
-  mascot compiled from the supplied light and dark action sets, with a short
-  idle hold on the first frame. CSS selects the pair from
-  `document.documentElement[data-theme]`; anything other than `light` uses the
-  dark artwork. Playback is native to the GIF. There is no random pose
-  selection, JavaScript timer, or hover-driven speed change. Reduced motion
-  swaps the GIF for the matching first-frame PNG without changing the 100px
-  slot.
+- The fork's empty-home hero uses the matching static first-frame PNG in the
+  existing 100px `HomeMascotLogo` slot. CSS selects light/dark artwork from
+  `document.documentElement[data-theme]`. No GIF is loaded or decoded, so the
+  idle home cannot submit frames from a foreground image loop. Geometry,
+  artwork, and reduced-motion behavior are otherwise unchanged.
   `BrandLogo` remains 20px/18px in the expanded/collapsed sidebar and 64px in
   the startup splash. Composer prompt rows do not render a leading brand icon
   in either home or thread-docked mode.
@@ -281,10 +278,21 @@ re-composited even when nothing is happening: the permission dot on a
 session waiting for approval, the plan-mode chip in the composer toolbar,
 and the warning dot on the backend banner each play two cycles and then
 hold a steady state that carries the meaning by itself (purple fill,
-planning-tinted icon, warning fill). Only indicators that describe work in
-flight — a streaming cursor, a running tool row, a recording microphone —
-may animate for as long as that work lasts. Reduced-motion mode disables
-all of them.
+planning-tinted icon, warning fill). Decorative transcript work indicators
+also play only two cycles: the Working dots, active thinking/tool label marker,
+subagent-creation dot, run-row status dot, tool spinner, and streaming cursor.
+The scheduled-task live marker follows the same bound. Each then restores its
+visible static style while labels, elapsed time, Stop controls, and actual
+streamed content continue updating. Text/timer updates must not restart these
+animations; entering a new running state may replay the bounded cue. Window
+transparency, native vibrancy, layout, colors, and task execution are unchanged.
+The fork also bounds renderer-owned loading, connection, startup, and voice
+decorative indicators to two cycles. Static recording markers, state copy, and
+real progress updates remain visible; indeterminate progress marks return to
+a visible static position. Hidden retained panes pause descendant animations
+without dropping their layout or scroll state. Plugin-owned content and actual
+streaming updates are outside this CSS guarantee. Reduced-motion mode disables
+these cues from the first frame.
 
 ### 4.6 Tailwind CSS variable stub
 
@@ -593,7 +601,7 @@ floating layers where an edge is an elevation cue rather than a partition.
 | Tile | `--ds-tile` (3.5% text mix); hover `--ds-tile-hover` (6%); deep `--ds-tile-deep` (8%) | Panels, list rows, cards, form fields, chips, code blocks, empty states |
 | Raised | `--ds-raised` + `--ds-raised-shadow` | The active pill of a segmented control, a disclosed detail block, a recorder keycap |
 | Dock | `--ds-bg-dock` (the column), `--ds-bg-dock-raised` (its header and viewer strips) | The work-panel column and the bars inside it. Both are tokens, not literals, so a contributed theme can move them (D419) |
-| Sidebar / settings rail | `--ds-bg-sidebar` (opaque fallback: light `#f3f3f3`, dark `#000000`), `--ds-bg-sidebar-image`, shared macOS glass tint/sheen | One `sidebar-surface` material for both navigation columns; content stays opaque |
+| Sidebar / settings rail | `--ds-bg-sidebar` (light `#f3f3f3`, dark `#000000`), `--ds-bg-sidebar-image` | One opaque `sidebar-surface` material for both navigation columns |
 | Settings search | `--ds-settings-field-bg` (light `#ffffff`, dark `#212121`) | Search pill on the settings rail |
 | Active settings item | `--ds-settings-nav-active` (light 12% `#1a1c1f` mixed over white; dark 10% `--gray-0` over transparent) | Selected navigation pill |
 | Inset search | `--ds-field-inset-bg`, `--ds-field-inset-focus-bg` (light `#f3f3f3` / white; dark 5% / 7% primary-text mix over transparent) | Plugin search and Agent capability search, including focus |
@@ -609,10 +617,9 @@ Main and settings navigation share the same material, not just matching colors.
 The legacy `--ds-settings-rail-bg` remains readable with the shared built-in
 palette and supplies the sidebar color fallback, including theme overrides.
 An explicit `--ds-bg-sidebar` override takes precedence. This preserves legacy
-color reads and inputs without retaining
-an independent settings-only plate or creating a circular alias. On macOS the
-shared tint derives from that color; on other platforms the shared plate is
-opaque. Background imagery uses `--ds-bg-sidebar-image` for both rails.
+color reads and inputs without retaining an independent settings-only plate or
+creating a circular alias. The fork uses an opaque plate on macOS as well as
+other platforms. Background imagery uses `--ds-bg-sidebar-image` for both rails.
 
 The dark composer shell consumes `--ds-bg-elevated-primary` directly; light
 continues to use `--ds-bg-composer`. Switch on-state knobs consume
@@ -751,12 +758,8 @@ plain status text:
 - Exit: 280ms opacity fade (`startup-splash-out`) once `ready` is true, revealing
   the already-mounted shell underneath
 - Reduced motion: near-zero enter/exit and a static full-width bar
-- macOS: the splash is the same glass as the sidebar (D304 / D348) — the
-  `--ds-sidebar-glass-tint` fill plus top/bottom sheen over the native
-  `sidebar` vibrancy, so the boot surface never flashes an opaque panel
-  ahead of the translucent sidebar. The mounted shell stays hidden under
-  the glass until the exit fade, then cross-fades in. Other platforms keep
-  the opaque `--ds-bg-primary` fill
+- The fork uses the opaque `--ds-bg-primary` splash fill on macOS too, with no
+  native sidebar vibrancy. Existing boot timing and exit feedback are preserved.
 
 This is boot-state feedback, not decorative chrome.
 
@@ -794,8 +797,8 @@ are also explicitly suppressed or collapsed to a static state.
 ### 8.6 Prohibited motion
 
 - No parallax
-- No continuous background animations (particles, waves); the bounded
-  foreground mascot loop is the explicit empty-home exception
+- No continuous background or foreground decorative loops; the fork's
+  empty-home mascot is static.
 - No shimmer/skeleton animations longer than 1s loop — use simple fade-in for loading states
 - No bounce effects
 - No multi-second boot theatrical sequences; splash exits as soon as ready (+ min dwell)
@@ -1135,6 +1138,9 @@ header-height background behind the excluded lane without covering its controls.
   default. Corners become rectangular while maximized or fullscreen; positive
   values on Windows 11 do not guarantee an exact DIP radius. Native window
   background colors remain theme-owned. Electron's borderless
+  The fork's macOS window also stays opaque without vibrancy; plugin alpha colors
+  are composited over the resolved built-in background during creation and theme
+  updates. Windows platform background and native-corner behavior stay upstream.
   fullscreen fallback fills the display without reporting `isFullScreen()`;
   Main tracks its state so toggling back restores the previous bounds and
   fullscreen geometry is never persisted. Frameless titlebar drag

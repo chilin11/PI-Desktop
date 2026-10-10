@@ -198,9 +198,10 @@ test("draft Composer thinking follows the exact model selected in its menu", () 
     /const nextThinkingLevel = selectedSameModel\s*\?\s*thinkingLevelForProvider\(nextModelProvider, thinkingLevel\)[\s\S]*?initialThinkingLevelForBinding\([\s\S]*?initialThinkingLevelForUnmatchedModel\(/,
   );
   assert.match(composerSource, /const selectedBinding = provider\?\.models\.find/);
+  // A remembered level for the inherited model wins; otherwise the binding default.
   assert.match(
     composerSource,
-    /const draftThinkingLevel = selectedModelInfo\?\.catalogSource === "models\.dev"\s*\?\s*initialThinkingLevelForBinding\(/,
+    /const rememberedDraftLevel = rememberedThinkingLevel\(recentModels, selectedModel\);\s*const draftThinkingLevel = rememberedDraftLevel\s*\?\s*thinkingLevelForProvider\(thinkingProvider, rememberedDraftLevel\)\s*:\s*selectedModelInfo\?\.catalogSource === "models\.dev"\s*\?\s*initialThinkingLevelForBinding\(/,
   );
   assert.match(composerSource, /initialThinkingLevelForUnmatchedModel\(/);
   assert.match(modelMenuSource, /initialThinkingLevelForUnmatchedModel\(/);

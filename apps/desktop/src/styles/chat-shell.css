@@ -100,6 +100,13 @@
   pointer-events: none;
 }
 
+/* Retention preserves scroll state, not background animation work. */
+.session-pane[data-visible="false"] *,
+.session-pane[data-visible="false"] *::before,
+.session-pane[data-visible="false"] *::after {
+  animation-play-state: paused !important;
+}
+
 /* A cold switch keeps the current pane fully legible: only the progress track
  * marks the wait, and the composer is what goes inert, so a prompt cannot be
  * sent to the session being left. */
@@ -122,11 +129,14 @@
   width: 28%;
   height: 100%;
   background: var(--ds-accent);
-  animation: session-switch-progress 720ms var(--motion-ease-standard) infinite;
-  transform: translateX(-110%);
+  animation: session-switch-progress 720ms var(--motion-ease-standard) 2;
+  transform: translateX(0);
 }
 
 @keyframes session-switch-progress {
+  from {
+    transform: translateX(-110%);
+  }
   to {
     transform: translateX(460%);
   }
@@ -153,7 +163,7 @@
   border: 2px solid var(--ds-border-default);
   border-top-color: var(--ds-text-secondary);
   border-radius: var(--radius-round);
-  animation: route-pending-spin 700ms linear infinite;
+  animation: route-pending-spin 700ms linear 2;
 }
 
 @keyframes route-pending-spin {
@@ -353,7 +363,7 @@
   height: 14px;
   border-radius: var(--radius-sm, 6px);
   background: color-mix(in oklab, var(--ds-text-primary) 8%, transparent);
-  animation: transcript-skeleton-pulse 1.4s var(--motion-ease-standard) infinite;
+  animation: transcript-skeleton-pulse 1.4s var(--motion-ease-standard) 2;
 }
 
 .transcript-skeleton-row.user .transcript-skeleton-line {
@@ -744,21 +754,9 @@
   user-select: none;
 }
 
-:root:not([data-theme="light"]) .home-mascot-logo .home-mascot-motion.home-mascot-dark,
-:root[data-theme="light"] .home-mascot-logo .home-mascot-motion.home-mascot-light {
+:root:not([data-theme="light"]) .home-mascot-logo .home-mascot-still.home-mascot-dark,
+:root[data-theme="light"] .home-mascot-logo .home-mascot-still.home-mascot-light {
   display: block;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :root:not([data-theme="light"]) .home-mascot-logo .home-mascot-motion.home-mascot-dark,
-  :root[data-theme="light"] .home-mascot-logo .home-mascot-motion.home-mascot-light {
-    display: none;
-  }
-
-  :root:not([data-theme="light"]) .home-mascot-logo .home-mascot-still.home-mascot-dark,
-  :root[data-theme="light"] .home-mascot-logo .home-mascot-still.home-mascot-light {
-    display: block;
-  }
 }
 
 .empty-hero h1 {

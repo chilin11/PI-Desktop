@@ -31,6 +31,17 @@ test("switching models adopts the target default without resetting same-model ov
     /const nextThinkingLevel = selectedSameModel\s*\?\s*thinkingLevelForProvider\(nextModelProvider, thinkingLevel\)[\s\S]*?initialThinkingLevelForBinding\(\s*nextBinding,\s*nextModelProvider\?\.supportedThinkingLevels,\s*\)[\s\S]*?initialThinkingLevelForUnmatchedModel\(\s*nextBinding,\s*nextModelProvider\?\.supportedThinkingLevels,\s*\)/,
   );
 });
+test("re-picking a recent model restores its remembered reasoning level", () => {
+  assert.match(
+    modelMenuSource,
+    /const remembered = rememberedThinkingLevel\(useAppStore\.getState\(\)\.recentModels, \{\s*providerId: candidate\.id, modelId: nextModelId,\s*\}\);/,
+  );
+  // Clamped onto the target model's ladder; the default applies only without a memory.
+  assert.match(
+    modelMenuSource,
+    /: remembered\s*\?\s*thinkingLevelForProvider\(nextModelProvider, remembered\)\s*:\s*\(nextModel\?\.catalogSource === "models\.dev"/,
+  );
+});
 test("the menu root carries the reasoning slider itself", () => {
   // The root view renders the slider and nothing else for the level: there is
   // no reasoning entry left to open a list of levels.

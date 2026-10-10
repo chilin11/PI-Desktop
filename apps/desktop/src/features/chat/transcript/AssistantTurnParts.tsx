@@ -14,7 +14,7 @@ const SmoothMessageBubble = memo(function SmoothMessageBubble({ message, streami
   message: UiMessage;
   streaming: boolean;
 }) {
-  const smoothStreaming = useAppStore((s) => s.settings?.smoothStreaming !== false);
+  const smoothStreaming = useAppStore((s) => s.settings?.smoothStreaming === true);
   const prefersReducedMotion = typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const enabled = smoothStreaming && !prefersReducedMotion;

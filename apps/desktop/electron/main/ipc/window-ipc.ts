@@ -128,7 +128,8 @@ export function registerWindowIpc({
         errorCode: ErrorCodes.INVALID_ARGUMENT,
       });
     }
-    if (process.platform === "darwin") return { applied: false, theme };
+    // macOS uses an opaque window too (no vibrancy), so the native plate
+    // follows the theme on every platform and resize edges never flash.
     const mainWindow = getMainWindow();
     if (!mainWindow || mainWindow.isDestroyed()) {
       throw new Error("main window unavailable");

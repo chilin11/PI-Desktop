@@ -3,19 +3,6 @@
   native window controls, the conversation top bar, and the notification center.
 */
 
-/*
- * The native vibrancy material is visible only through the renderer ancestry.
- * Keep those layers transparent on macOS; the full-height sidebar and the
- * opaque main pane/titlebars still cover their respective regions.
- */
-:root[data-platform="darwin"],
-:root[data-platform="darwin"] body,
-:root[data-platform="darwin"] #root,
-:root[data-platform="darwin"] .app-shell,
-:root[data-platform="darwin"] .settings-shell {
-  background: transparent;
-}
-
 /* Boot splash — feedback for host/settings bootstrap (not decorative chrome). */
 .startup-splash {
   position: fixed;
@@ -31,9 +18,9 @@
 }
 
 /*
- * On macOS the splash is glass, so the shell that mounts under it as soon as
- * `ready` flips would bleed through the tint. Hide it until the exit fade,
- * then cross-fade without replaying the dock's explicit toggle animation.
+ * Hide the shell that mounts under the splash as soon as `ready` flips until
+ * the exit fade, then cross-fade without replaying the dock's explicit toggle
+ * animation.
  */
 :root[data-platform="darwin"] .app-shell.is-booting:has(.startup-splash:not(.is-exiting))
   > :not(.startup-splash) {
@@ -113,7 +100,7 @@
   height: 100%;
   border-radius: inherit;
   background: color-mix(in oklab, var(--ds-text-primary) 55%, transparent);
-  animation: startup-bar 1.1s var(--motion-ease-standard) infinite;
+  animation: startup-bar 1.1s var(--motion-ease-standard) 2;
 }
 
 @keyframes startup-splash-in {
@@ -421,27 +408,6 @@
   flex: 0 0 56px;
   display: flex;
   flex-direction: column;
-}
-
-/*
- * macOS supplies the blur through native sidebar vibrancy. The renderer
- * only adds a thin tint plus sheen on the sidebar, rail, and boot splash —
- * an opaque splash would flash a painted panel before the glass sidebar.
- * The sheen keeps the material reading as glass; a flat tint looks painted.
- * The main pane and titlebars remain opaque `bg-primary`.
- */
-:root[data-platform="darwin"] .startup-splash,
-:root[data-platform="darwin"] .sidebar-surface,
-:root[data-platform="darwin"] .sidebar-rail {
-  background-color: var(--ds-sidebar-glass-tint);
-  background-image: var(--ds-bg-sidebar-image, none),
-    linear-gradient(
-      180deg,
-      var(--ds-sidebar-glass-sheen-top),
-      transparent 220px
-    ),
-    linear-gradient(0deg, var(--ds-sidebar-glass-sheen-bottom), transparent 160px);
-  background-repeat: no-repeat;
 }
 
 :root[data-platform="darwin"] .sidebar-rail {

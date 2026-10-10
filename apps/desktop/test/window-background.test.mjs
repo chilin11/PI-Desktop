@@ -35,7 +35,10 @@ test("constructor background options keep only the Windows outer surface transpa
   assert.deepEqual(mainWindowBackgroundOptions("linux", "#12345680"), {
     backgroundColor: "rgba(18, 52, 86, 0.5019607843137255)",
   });
-  assert.deepEqual(mainWindowBackgroundOptions("darwin", "#ffffff"), {});
+  assert.deepEqual(mainWindowBackgroundOptions("darwin", "#ffffff"), {
+    transparent: false,
+    backgroundColor: "#ffffff",
+  });
 });
 
 test("Windows 11 uses an opaque top-level background", () => {
@@ -62,6 +65,17 @@ test("background updates target the rounded content view on Windows and native w
   assert.deepEqual(linux.calls, [["window", "rgba(18, 52, 86, 1)"]]);
 
   const mac = makeWindow();
-  assert.equal(applyMainWindowBackground(mac, "darwin", "#123456"), false);
-  assert.deepEqual(mac.calls, []);
+  assert.equal(applyMainWindowBackground(mac, "darwin", "#123456"), true);
+  assert.deepEqual(mac.calls, [["window", "#123456"]]);
+});
+
+test("macOS stays opaque across plugin themes and restores its built-in background", () => {
+  const mac = makeWindow();
+  assert.deepEqual(mainWindowBackgroundOptions("darwin", "#00000080", false, "#ffffff"), {
+    transparent: false,
+    backgroundColor: "#7f7f7f",
+  });
+  assert.equal(applyMainWindowBackground(mac, "darwin", "#00000080", false, "#ffffff"), true);
+  assert.equal(applyMainWindowBackground(mac, "darwin", "#ffffff"), true);
+  assert.deepEqual(mac.calls, [["window", "#7f7f7f"], ["window", "#ffffff"]]);
 });
