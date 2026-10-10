@@ -35,6 +35,7 @@ const { registerSessionIpc } = load("../electron/main/ipc/session-ipc.ts", {
   "../importers": {},
   "../services/session-collaboration": collaboration,
   "../services/session-search": { searchSessionsAcrossSources: async () => ({ hits: [], nextOffset: null }) },
+  "../bootstrap/remote-hosts.js": { getActiveRemoteHostsBoot: () => null },
 });
 const summary = {
   sessionId: "worker-session-id",
@@ -89,6 +90,11 @@ function rendererApi(invoke) {
   const { api } = load("../src/lib/api.ts", {
     "@pi-desktop/shared": shared,
     "./plan-history": load("../src/lib/plan-history.ts", {}),
+    "./remote-session-safety": load("../src/lib/remote-session-safety.ts", {}),
+    "./remote-ipc-safety": load("../src/lib/remote-ipc-safety.ts", {
+      "@pi-desktop/shared": shared,
+      i18next: { default: { t: (key) => key } },
+    }),
   }, {
     window: { piDesktop: bridge },
   });

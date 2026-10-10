@@ -88,7 +88,7 @@ test("renderer api and store expose one guarded move action", () => {
 
 test("sidebar sessions drag onto project groups without a menu fallback", () => {
   assert.match(sidebar, /const SESSION_DRAG_MIME = "application\/x-pi-desktop-session";/);
-  assert.match(sidebar, /draggable=\{!running\}/);
+  assert.match(sidebar, /draggable=\{!running && !isRemoteSession\(session\)\}/);
   assert.match(sidebar, /beginSessionDrag\(event, session\.id\)/);
   assert.match(sidebar, /onDragEnd=\{endSessionDrag\}/);
   assert.match(sidebar, /is-dragging/);

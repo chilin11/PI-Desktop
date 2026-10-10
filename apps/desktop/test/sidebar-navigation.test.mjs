@@ -277,7 +277,9 @@ test("session rows use the hover card instead of a native title tooltip", () => 
 
   assert.match(sessionMain, /showSessionHoverCard\(/);
   assert.doesNotMatch(sessionMain, /title=\{taskTitle\(session\.title\)\}/);
-  assert.doesNotMatch(sessionMain, /\btitle=\{/);
+  const sessionButtonProps = sessionMain.split(/\n\s*>\s*\n/, 1)[0];
+  assert.doesNotMatch(sessionButtonProps, /\btitle=\{/);
+  assert.match(sessionMain, /title=\{session\.remoteHostLabel\}/);
   assert.match(hoverSource, /className="sidebar-session-hover-card"/);
   assert.match(hoverSource, /className="sidebar-session-hover-card-title"/);
   assert.match(sessionMain, /onFocusCapture=/);
