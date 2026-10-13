@@ -1134,7 +1134,7 @@
   width: 70%;
   border-radius: var(--radius-full);
   background: color-mix(in oklab, var(--ds-text-primary) 8%, transparent);
-  animation: plugins-skeleton-pulse 0.9s var(--motion-ease-out) infinite;
+  animation: plugins-skeleton-pulse 0.9s var(--motion-ease-out) 2;
 }
 
 .plugins-skeleton-line.is-short {
@@ -1878,11 +1878,14 @@
    the same sliding mark the session switch uses for an open-ended wait. */
 .plugins-install-bar.is-indeterminate .plugins-install-bar-fill {
   width: 28%;
-  animation: plugins-install-slide 720ms var(--motion-ease-standard) infinite;
-  transform: translateX(-110%);
+  animation: plugins-install-slide 720ms var(--motion-ease-standard) 2;
+  transform: translateX(0);
 }
 
 @keyframes plugins-install-slide {
+  from {
+    transform: translateX(-110%);
+  }
   to {
     transform: translateX(460%);
   }

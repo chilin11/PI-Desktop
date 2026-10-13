@@ -20,6 +20,27 @@ requires an injected Developer ID identity (local) or `CSC_LINK` certificate
 (CI), and fails before publication if signing or notarization verification does
 not pass.
 
+### Fork test packages
+
+Manual Release runs with `sign_macos=false` use `build/fork-debug.cjs`:
+`PI-Desktop Fork.app`, bundle ID `io.github.chilin11.pi-desktop-fork`, full
+ad-hoc signing (including the Rust extraResource), and an `afterSign` check
+before DMG/ZIP generation. The check requires the local-network usage string
+and verifies both the complete app and Rust binary. This replaces leftover
+Electron linker signatures whose Info.plist and resources were not sealed.
+It does not publish a Release or change the Developer ID lane.
+
+Ad-hoc signing is not Apple-issued signing or notarization. Gatekeeper may
+still block a downloaded test app, and macOS Local Network identity/grants
+are not guaranteed. `xattr` only changes quarantine metadata; it does not
+sign the app or grant Local Network access. Do not reset TCC, globally disable
+Gatekeeper, or promise that the usage string alone grants access. Verify the
+actual bundle identity, signature, failed request path and OS grant on-device.
+Apple-issued signing and notarization require the fork owner's certificates.
+The fork shares the existing host data default; quit the upstream app before
+testing or use an explicit isolated data directory. Do not copy credentials
+or migrate production data as part of a packaging check.
+
 On macOS, `pnpm dev` creates and reuses a fingerprinted branded Electron host
 bundle under `.cache/electron-dev/`. Its bundle name, executable, identifier,
 and ICNS resource are development-only PI-Desktop values, so AppKit shows

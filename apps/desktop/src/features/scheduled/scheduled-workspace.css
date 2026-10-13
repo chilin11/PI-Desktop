@@ -139,7 +139,7 @@
   display: inline-flex;
   flex: 0 0 auto;
   color: var(--ds-warning);
-  animation: scheduled-live-pulse 1.6s var(--motion-ease-standard) infinite;
+  animation: scheduled-live-pulse 1.6s var(--motion-ease-standard) 2;
 }
 
 @keyframes scheduled-live-pulse {

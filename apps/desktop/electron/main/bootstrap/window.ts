@@ -190,25 +190,23 @@ export async function createWindow({
     // The traffic-light position comes from @pi-desktop/shared so the space
     // the renderer reserves for the buttons (styles/tokens.css) is derived
     // from the same numbers that place them.
+    // macOS stays opaque to avoid recompositing native sidebar vibrancy on
+    // every streamed frame. Windows keeps its upstream native-corner policy.
     ...(process.platform === "darwin"
       ? {
           titleBarStyle: "hiddenInset" as const,
           trafficLightPosition: MAC_TRAFFIC_LIGHT_POSITION,
-          vibrancy: "sidebar" as const,
-          visualEffectState: "followWindow" as const,
-          transparent: true,
-          backgroundColor: "#00000000",
         }
       : {
           frame: false,
           ...(process.platform === "win32" ? { thickFrame: false } : {}),
-          ...mainWindowBackgroundOptions(
-            process.platform,
-            initialWindowBackground,
-            windows11NativeCorners,
-            initialWindowBackground,
-          ),
         }),
+    ...mainWindowBackgroundOptions(
+      process.platform,
+      initialWindowBackground,
+      windows11NativeCorners,
+      initialWindowBackground,
+    ),
     ...(process.platform === "win32"
       ? {
           icon: windowsIconPath(),

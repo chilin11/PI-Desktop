@@ -676,7 +676,7 @@
 }
 
 .provider-models-reload.is-loading svg {
-  animation: provider-models-reload-spin 700ms linear infinite;
+  animation: provider-models-reload-spin 700ms linear 2;
 }
 
 @keyframes provider-models-reload-spin {

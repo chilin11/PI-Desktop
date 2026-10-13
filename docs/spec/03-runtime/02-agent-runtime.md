@@ -230,6 +230,16 @@ independent recovered outages must not eventually stop because earlier tool
 rounds consumed the budget. One-shot completions still use one bounded budget
 for their single response. Persistent failures remain bounded and abortable.
 
+Provider streams have no zero-event idle deadline by default. A model may
+remain silent for more than three minutes while thinking, then complete the
+same request without an automatic abort or replay. This applies to the main
+session and builtin subagents. User Stop, disposal, actual transport/provider
+failures, and their existing retry classification remain unchanged.
+`PI_DESKTOP_STREAM_IDLE_TIMEOUT_MS=0` explicitly keeps the watchdog disabled;
+a positive value opts into an idle deadline, clamped to the maximum retry
+backoff. Missing, blank, invalid, or negative values keep it disabled. Tool
+execution budgets and the separate compaction RPC deadline are unchanged.
+
 Before surfacing a pre-stream `PROVIDER_ERROR` for HTTP 400/422 whose message
 ends in `(no body)`, the runtime makes at most one silent repair attempt with
 the generated output-limit fields removed: `max_tokens`,

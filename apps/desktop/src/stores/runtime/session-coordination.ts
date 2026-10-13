@@ -20,6 +20,11 @@ import {
 } from "../../lib/session-fork";
 import { EMPTY_SESSION_WINDOW } from "../../lib/session-create";
 import { inheritedSessionModelBinding } from "../../lib/session-model";
+import { rememberedThinkingLevel } from "../../lib/recent-models";
+import {
+  thinkingLevelForProvider,
+  thinkingProviderForModel,
+} from "../../features/chat/composer/model";
 import {
   clearSessionPanes,
   retainSessionPane,
@@ -299,7 +304,17 @@ export function createSessionCoordination({
           sameComposerModelId(candidate.modelId, inherited.modelId ?? ""),
         )
       : undefined;
-    const defaultThinkingLevel = catalogModel?.catalogSource === "models.dev"
+    const rememberedLevel = rememberedThinkingLevel(state.recentModels, inherited);
+    const defaultThinkingLevel = rememberedLevel
+      ? thinkingLevelForProvider(
+          thinkingProviderForModel(
+            defaultProvider,
+            inherited.modelId,
+            inherited.providerId ? state.providerModels[inherited.providerId] : undefined,
+          ),
+          rememberedLevel,
+        )
+      : catalogModel?.catalogSource === "models.dev"
       ? initialThinkingLevelForBinding(
           inheritedBinding,
           defaultProvider?.supportedThinkingLevels,

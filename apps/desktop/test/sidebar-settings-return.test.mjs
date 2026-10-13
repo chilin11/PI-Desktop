@@ -69,8 +69,9 @@ test("home and settings use the same material without animating the settings pla
   assert.match(sidebar, /cx\("sidebar", "sidebar-surface", className\)/);
   assert.match(settings, /className="settings-nav sidebar-surface"/);
   assert.match(styles, /\.sidebar-surface,\s*\.sidebar-rail\s*\{[^}]*background-color:\s*var\(--ds-bg-sidebar[^}]*background-image:\s*var\(--ds-bg-sidebar-image/);
-  assert.match(styles, /:root\[data-platform="darwin"\] \.sidebar-surface,/);
-  assert.match(styles, /:root\[data-platform="darwin"\] \.settings-shell\s*\{\s*background:\s*transparent;/);
+  // The window is opaque on macOS too, so no platform overrides the shared material.
+  assert.doesNotMatch(styles, /:root\[data-platform="darwin"\] \.sidebar-surface/);
+  assert.doesNotMatch(styles, /:root\[data-platform="darwin"\] \.settings-shell\s*\{\s*background:\s*transparent;/);
   for (const selector of ["settings-content", "settings-titlebar"]) {
     assert.match(styles, new RegExp(`\\.${selector}\\s*\\{[^}]*background:\\s*var\\(--ds-bg-primary\\);`));
   }

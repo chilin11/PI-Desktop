@@ -480,7 +480,11 @@ export function createQueueSlice({
             return false;
           }
           if (current?.source !== "pi-native" && current?.source !== "remote") {
-            get().rememberModel(current ?? {});
+            get().rememberModel({
+              providerId: current?.providerId,
+              modelId: current?.modelId,
+              thinkingLevel: current?.thinkingLevel,
+            });
           }
           onAccepted?.(startedIn);
           return true;

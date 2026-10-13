@@ -61,14 +61,11 @@ test("app chrome uses the shared brand asset without branding the composer input
     () => access(new URL("../src/assets/home-mascot-groups.png", import.meta.url)),
   );
   assert.match(chatSurface, /<HomeMascotLogo \/>/);
-  assert.match(mascotLogo, /import mascotMotionDarkUrl from\s*"\.\.\/assets\/home-mascot-dark\.gif"/);
-  assert.match(mascotLogo, /import mascotMotionLightUrl from\s*"\.\.\/assets\/home-mascot-light\.gif"/);
+  assert.doesNotMatch(mascotLogo, /mascotMotion|\.gif/);
   assert.match(mascotLogo, /import mascotStillDarkUrl from\s*"\.\.\/assets\/home-mascot-still-dark\.png"/);
   assert.match(mascotLogo, /import mascotStillLightUrl from\s*"\.\.\/assets\/home-mascot-still-light\.png"/);
   assert.match(mascotLogo, /className="home-mascot-logo"/);
   assert.match(mascotLogo, /aria-hidden="true"/);
-  assert.match(mascotLogo, /className="home-mascot-motion home-mascot-dark"/);
-  assert.match(mascotLogo, /className="home-mascot-motion home-mascot-light"/);
   assert.match(mascotLogo, /className="home-mascot-still home-mascot-dark"/);
   assert.match(mascotLogo, /className="home-mascot-still home-mascot-light"/);
   assert.doesNotMatch(mascotLogo, /<svg/);
@@ -84,15 +81,11 @@ test("app chrome uses the shared brand asset without branding the composer input
   );
   assert.match(
     styles,
-    /:root:not\(\[data-theme="light"\]\) \.home-mascot-logo \.home-mascot-motion\.home-mascot-dark/,
+    /:root:not\(\[data-theme="light"\]\) \.home-mascot-logo \.home-mascot-still\.home-mascot-dark/,
   );
   assert.match(
     styles,
-    /:root\[data-theme="light"\] \.home-mascot-logo \.home-mascot-motion\.home-mascot-light/,
-  );
-  assert.match(
-    styles,
-    /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.home-mascot-still\.home-mascot-dark,[\s\S]*?\.home-mascot-still\.home-mascot-light[\s\S]*?display:\s*block;/,
+    /:root\[data-theme="light"\] \.home-mascot-logo \.home-mascot-still\.home-mascot-light/,
   );
   assert.match(
     rendererLanguage,

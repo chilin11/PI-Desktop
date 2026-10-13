@@ -30,7 +30,7 @@ on:
   workflow_dispatch:
     inputs:
       sign_macos:
-        description: 'Sign and notarize macOS artifacts (default true; set false only for unsigned debug artifacts)'
+        description: 'Developer ID-sign and notarize macOS artifacts (false builds verified ad-hoc test artifacts)'
         required: false
         default: true
         type: boolean
@@ -215,16 +215,25 @@ jobs:
         # aligned with the runner selected by this matrix entry.
         run: pnpm --filter @pi-desktop/desktop run ${{ matrix.dist }} -- --${{ matrix.arch }}
 
-      - name: Package unsigned macOS installer
+      - name: Package ad-hoc signed macOS test installer
         if: matrix.platform == 'macos' && env.MACOS_SIGN_RELEASE != 'true'
         env:
-          # Debug-only lane: workflow_dispatch with sign_macos=false.
+          # Debug only: complete bundle signing, not Developer ID/notarization.
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        working-directory: apps/desktop
         run: |
           set -euo pipefail
-          # Artifact names are defined in apps/desktop/package.json: the mac
-          # pattern labels ZIPs, and the dmg target pattern labels DMGs.
-          pnpm --filter @pi-desktop/desktop run dist:mac -- --${{ matrix.arch }}
+          pnpm run build:deps
+          pnpm run build:host-release
+          pnpm run bundle:runtime
+          pnpm exec electron-vite build
+          # Call electron-builder directly: `pnpm run dist:mac -- <args>`
+          # forwards a literal `--`, after which electron-builder ignores
+          # `--config`, silently packaging the upstream identity unsigned.
+          pnpm exec electron-builder --mac --${{ matrix.arch }} --publish never \
+            --config build/fork-debug.cjs
+          # Fail fast if the fork identity was not applied.
+          ls -d release/mac*/"PI-Desktop Fork.app"
 
       - name: Diagnose macOS signing environment
         # Records the runner baseline (system, codesign, identities, keychain,

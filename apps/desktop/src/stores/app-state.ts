@@ -157,7 +157,11 @@ export type AppState = {
   sessionCompactions: Record<string, (ContextCompactionMark & { summary?: string })[]>;
   providers: ProviderPublic[];
   recentModels: RecentModel[];
-  rememberModel: (model: { providerId?: string; modelId?: string }) => void;
+  rememberModel: (model: {
+    providerId?: string;
+    modelId?: string;
+    thinkingLevel?: SessionThinkingLevel;
+  }) => void;
   /** Discovered model lists per provider id (composer model menu). */
   providerModels: Record<string, ModelInfo[]>;
   workspace?: ProjectWorkspace | null;
