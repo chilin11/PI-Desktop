@@ -54,16 +54,18 @@ test("host-core dispatches through the shared dispatch deadline", () => {
   );
 });
 
-test("the manual-compaction deadline outlasts the summary request it wraps", () => {
-  // The mirrored constants are the drift risk: if the sidecar raises its stream
-  // watchdog or its retry count, the shared deadline has to follow, otherwise
-  // Electron times out a compaction the sidecar is still working on (#795).
+test("manual compaction retains its independent budget when the default stream watchdog is disabled", async () => {
+  // A disabled provider watchdog does not remove the finite compaction RPC
+  // budget. Its historical estimate and retry allowance remain independent.
   const providerRetry = source("packages/agent-runtime/src/provider-retry.ts");
   const summaryInput = source("packages/agent-runtime/src/compaction-summary-input.ts");
   const watchdog = constMs(providerRetry, "STREAM_IDLE_TIMEOUT_DEFAULT_MS");
   const retries = constMs(summaryInput, "COMPACTION_SUMMARY_MAX_RETRIES");
   const baseDelay = constMs(summaryInput, "COMPACTION_SUMMARY_RETRY_BASE_MS");
-  assert.equal(constMs(sharedTimeouts, "STREAM_IDLE_TIMEOUT_MS"), watchdog);
+  assert.equal(watchdog, 0);
+  assert.equal(constMs(sharedTimeouts, "STREAM_IDLE_TIMEOUT_MS"), 180_000);
+  const { AGENT_COMPACT_RPC_TIMEOUT_MS } = await import("../../../packages/shared/src/rpc-timeouts.ts");
+  assert.equal(AGENT_COMPACT_RPC_TIMEOUT_MS, 744_000);
   assert.equal(constMs(sharedTimeouts, "COMPACTION_SUMMARY_MAX_RETRIES"), retries);
   // Doubling waits after the first attempt: base + 2*base + 4*base + ...
   assert.equal(

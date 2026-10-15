@@ -552,7 +552,7 @@ export function createApplicationLifecycle({
   }
 
   /**
-   * Drive Chromium and macOS native chrome (menus, vibrancy) from the same
+   * Drive Chromium and macOS native chrome (menus, traffic lights) from the same
    * theme preference the renderer paints. `system` keeps following the OS;
    * an explicit or plugin base locks the native appearance so a dark dock
    * cannot sit on a light Liquid Glass plate (D348). Missing `plugin:` themes
@@ -572,9 +572,6 @@ export function createApplicationLifecycle({
     }
     if (nativeTheme.themeSource === next) return;
     nativeTheme.themeSource = next;
-    if (process.platform === "darwin" && state.mainWindow && !state.mainWindow.isDestroyed()) {
-      state.mainWindow.setVibrancy("sidebar");
-    }
   }
 
   /**

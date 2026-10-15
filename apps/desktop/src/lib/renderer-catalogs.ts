@@ -4,7 +4,7 @@ import {
   type EnglishCatalog,
 } from "@pi-desktop/i18n/locale-info";
 import { en } from "@pi-desktop/i18n/locales/en";
-import { remoteEn, remoteZh } from "../locales/remote";
+import { remoteEn, remoteZh } from "../locales/remote.ts";
 
 type LocaleModule = { default: EnglishCatalog };
 type NonEnglishLocale = Exclude<AppLocale, "en">;

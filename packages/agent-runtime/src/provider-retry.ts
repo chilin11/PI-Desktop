@@ -542,12 +542,11 @@ export function createProviderRetryStream(
 }
 
 /**
- * Default zero-event idle budget for a provider stream: a stream that emits
- * nothing for this long is ended as a retriable stream failure so the shared
- * transient retry path re-runs the request instead of leaving the turn hung on
- * a connection the provider never closes.
+ * Provider streams have no idle deadline by default: a slow model can remain
+ * silent while thinking without proving the connection has failed. An explicit
+ * positive environment override opts into the retriable idle watchdog.
  */
-export const STREAM_IDLE_TIMEOUT_DEFAULT_MS = 180_000;
+export const STREAM_IDLE_TIMEOUT_DEFAULT_MS = 0;
 
 /**
  * The smallest idle budget a positive override may set. The watchdog wraps the

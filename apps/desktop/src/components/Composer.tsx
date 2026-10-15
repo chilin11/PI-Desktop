@@ -1,5 +1,6 @@
 import { isRemoteSession, sessionAllows } from "../lib/remote-session-safety";
 import { inheritedSessionModelBinding } from "../lib/session-model";
+import { rememberedThinkingLevel } from "../lib/recent-models";
 import {
   useEffect,
   useLayoutEffect,
@@ -368,7 +369,10 @@ export function Composer({
   );
   // A draft without a session starts at the selected model's stored default
   // thinking level, clamped onto that binding's enabled ladder.
-  const draftThinkingLevel = selectedModelInfo?.catalogSource === "models.dev"
+  const rememberedDraftLevel = rememberedThinkingLevel(recentModels, selectedModel);
+  const draftThinkingLevel = rememberedDraftLevel
+    ? thinkingLevelForProvider(thinkingProvider, rememberedDraftLevel)
+    : selectedModelInfo?.catalogSource === "models.dev"
     ? initialThinkingLevelForBinding(
         selectedBinding,
         thinkingProvider?.supportedThinkingLevels,

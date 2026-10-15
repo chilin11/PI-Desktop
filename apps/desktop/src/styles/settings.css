@@ -1504,7 +1504,7 @@
 }
 
 .settings-toggle.is-busy .settings-toggle-thumb {
-  animation: settings-toggle-pending 900ms ease-in-out infinite alternate;
+  animation: settings-toggle-pending 900ms ease-in-out 2 alternate;
 }
 
 .settings-toggle-thumb {
@@ -2562,7 +2562,7 @@
 }
 
 .agent-capability-badge.is-connecting .agent-capability-status-dot {
-  animation: agent-capability-pulse 1.1s var(--motion-ease-standard) infinite;
+  animation: agent-capability-pulse 1.1s var(--motion-ease-standard) 2;
 }
 
 .agent-capability-badge.is-failed {
@@ -2845,7 +2845,7 @@
 .agent-capability-skeleton-glyph,
 .agent-capability-skeleton-line {
   background: color-mix(in oklab, var(--ds-text-primary) 7%, transparent);
-  animation: agent-capability-shimmer 1.4s var(--motion-ease-standard) infinite;
+  animation: agent-capability-shimmer 1.4s var(--motion-ease-standard) 2;
 }
 
 .agent-capability-skeleton-glyph {

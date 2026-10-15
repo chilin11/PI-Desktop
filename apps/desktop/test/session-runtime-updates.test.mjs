@@ -7,6 +7,7 @@ const { createSessionRuntime } = await import("../src/stores/runtime/session-run
 const { createEventsSlice } = await import("../src/stores/slices/events-slice.ts");
 const { getSessionMessageSnapshot } = await import("../src/lib/session-transcript-updates.ts");
 const { getTranscriptProjection } = await import("../src/lib/transcript-projection.ts");
+const { STREAM_COMMIT_INTERVAL_MS } = await import("../src/lib/frame-batcher.ts");
 
 const message = (id, overrides = {}) => ({
   id, role: "assistant", content: id, createdAt: "2026-09-30T00:00:00Z", ...overrides,
@@ -44,6 +45,9 @@ function harness(messages, background = []) {
   return { ...access, runtime, writes: () => writes };
 }
 
+// One synthetic "flush" stands for a stream commit opportunity: stream deltas
+// commit at most once per STREAM_COMMIT_INTERVAL_MS, so each flush advances the
+// mocked clock past that interval and then drains any pending animation frame.
 function withFrames(run) {
   const originalRequest = globalThis.requestAnimationFrame;
   const originalCancel = globalThis.cancelAnimationFrame;
@@ -51,14 +55,18 @@ function withFrames(run) {
   let id = 0;
   globalThis.requestAnimationFrame = (callback) => { pending.set(++id, callback); return id; };
   globalThis.cancelAnimationFrame = (handle) => pending.delete(handle);
+  const timers = test.mock.timers;
+  timers.enable({ apis: ["setTimeout", "Date"], now: 1_000_000 });
   try {
     run(() => {
+      timers.tick(STREAM_COMMIT_INTERVAL_MS);
       const callbacks = [...pending.values()];
       pending.clear();
       callbacks.forEach((callback) => callback(0));
     });
     assert.equal(pending.size, 0, "each synthetic frame is drained");
   } finally {
+    timers.reset();
     if (originalRequest) globalThis.requestAnimationFrame = originalRequest;
     else delete globalThis.requestAnimationFrame;
     if (originalCancel) globalThis.cancelAnimationFrame = originalCancel;

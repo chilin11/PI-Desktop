@@ -240,8 +240,8 @@ test("release matrix packages both native macOS architectures", () => {
   );
   assert.match(
     releaseWorkflowSource,
-    /Package unsigned macOS installer[\s\S]*?pnpm --filter @pi-desktop\/desktop run dist:mac -- --\$\{\{ matrix\.arch \}\}/,
-    "unsigned macOS builds use the shared artifact naming config",
+    /Package ad-hoc signed macOS test installer[\s\S]*?pnpm exec electron-builder --mac --\$\{\{ matrix\.arch \}\} --publish never/,
+    "ad-hoc macOS builds use the shared artifact naming config",
   );
   assert.doesNotMatch(
     releaseWorkflowSource,
@@ -272,13 +272,14 @@ test("macOS release signing is required on tag pushes", () => {
   );
 
   const unsignedBlock = releaseWorkflowSource.match(
-    /- name: Package unsigned macOS installer[\s\S]*?(?=\n      - name:)/,
+    /- name: Package ad-hoc signed macOS test installer[\s\S]*?(?=\n      - name:)/,
   )?.[0];
-  assert.ok(unsignedBlock, "unsigned macOS debug package step is missing");
+  assert.ok(unsignedBlock, "ad-hoc macOS debug package step is missing");
   assert.match(unsignedBlock, /env\.MACOS_SIGN_RELEASE != 'true'/);
   assert.match(unsignedBlock, /CSC_IDENTITY_AUTO_DISCOVERY:\s*'false'/);
   assert.doesNotMatch(unsignedBlock, /CSC_LINK:|CSC_KEY_PASSWORD:|APPLE_/);
-  assert.doesNotMatch(unsignedBlock, /forceCodeSigning|notarize/);
+  assert.match(unsignedBlock, /--config build\/fork-debug\.cjs/);
+  assert.doesNotMatch(unsignedBlock, /notarize=true|forceCodeSigning=true/);
 
   assert.match(
     releaseWorkflowSource,
@@ -445,10 +446,9 @@ test("macOS signing instrumentation stays out of the Windows and Linux lanes", (
   assert.doesNotMatch(stepBlock("Package installers"), instrumentation);
   assert.doesNotMatch(stepBlock("Verify Linux host-core glibc floor"), instrumentation);
   assert.doesNotMatch(stepBlock("Export Linux ASAR release asset"), instrumentation);
-  // The unsigned macOS debug lane reports its bundle size but must not gain a
-  // signing identity, notarization, or publishing behaviour.
-  const unsignedBlock = stepBlock("Package unsigned macOS installer");
-  assert.ok(unsignedBlock, "unsigned macOS debug package step is missing");
+  // Ad-hoc test signing must not use Apple secrets or publication machinery.
+  const unsignedBlock = stepBlock("Package ad-hoc signed macOS test installer");
+  assert.ok(unsignedBlock, "ad-hoc macOS debug package step is missing");
   assert.doesNotMatch(unsignedBlock, instrumentation);
 });
 

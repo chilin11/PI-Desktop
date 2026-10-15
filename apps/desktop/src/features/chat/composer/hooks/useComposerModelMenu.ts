@@ -1,4 +1,4 @@
-import { sameRecentModel } from "../../../../lib/recent-models";
+import { rememberedThinkingLevel, sameRecentModel } from "../../../../lib/recent-models";
 import type {
   Mode,
   ProviderPublic,
@@ -261,9 +261,16 @@ export function useComposerModelMenu({
         activeSessionId &&
         candidate.id === provider?.id &&
         sameComposerModelId(modelId ?? "", nextModelId);
+      // Re-picking a model restores the level last sent with it, clamped onto
+      // what the model still supports; otherwise start at its default.
+      const remembered = rememberedThinkingLevel(useAppStore.getState().recentModels, {
+        providerId: candidate.id, modelId: nextModelId,
+      });
       const nextThinkingLevel = selectedSameModel
         ? thinkingLevelForProvider(nextModelProvider, thinkingLevel)
-        : (nextModel?.catalogSource === "models.dev"
+        : remembered
+          ? thinkingLevelForProvider(nextModelProvider, remembered)
+          : (nextModel?.catalogSource === "models.dev"
           ? initialThinkingLevelForBinding(
               nextBinding,
               nextModelProvider?.supportedThinkingLevels,

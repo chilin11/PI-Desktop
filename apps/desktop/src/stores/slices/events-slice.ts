@@ -22,7 +22,7 @@ import {
   applyMessageUpdate,
   mergeAgentEventEnvelopes,
 } from "@pi-desktop/shared";
-import { createFrameBatcher } from "../../lib/frame-batcher";
+import { createFrameBatcher, STREAM_COMMIT_INTERVAL_MS } from "../../lib/frame-batcher";
 import {
   clearSessionAsks,
   enqueueAsk,
@@ -120,7 +120,11 @@ export function createEventsSlice({
     } finally {
       flushingStreamUpdates = false;
     }
-  });
+    // Commit streamed tokens in ~10 Hz chunks (as Codex and Claude do)
+    // rather than once per display refresh: every commit re-lays out and
+    // re-rasterizes the growing Markdown turn, which on a 5K 120 Hz panel
+    // kept the GPU busy for the whole stream.
+  }, { minIntervalMs: STREAM_COMMIT_INTERVAL_MS });
 
   // Only full host proposals certify approval. The live approval bar's
   // legacy state-only fallbacks must not become authoritative history.

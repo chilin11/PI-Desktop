@@ -35,7 +35,12 @@ export function mainWindowBackgroundOptions(
     }
     return { transparent: true, backgroundColor: "#00000000" };
   }
-  if (platform === "darwin") return {};
+  if (platform === "darwin") {
+    return {
+      transparent: false,
+      backgroundColor: toOpaqueElectronBackgroundColor(color, opaqueFallbackColor),
+    };
+  }
   return { backgroundColor: toElectronBackgroundColor(color) };
 }
 
@@ -47,10 +52,8 @@ export function applyMainWindowBackground(
   windows11NativeCorners = false,
   opaqueFallbackColor = color,
 ): boolean {
-  if (platform === "darwin") return false;
-
   const useOpaqueWindowsSurface = platform === "win32" && windows11NativeCorners;
-  const electronColor = useOpaqueWindowsSurface
+  const electronColor = useOpaqueWindowsSurface || platform === "darwin"
     ? toOpaqueElectronBackgroundColor(color, opaqueFallbackColor)
     : toElectronBackgroundColor(color);
   if (platform === "win32" && !useOpaqueWindowsSurface) {
@@ -62,8 +65,8 @@ export function applyMainWindowBackground(
 }
 
 /**
- * Windows 11's DWM corner path requires an opaque top-level surface. Preserve
- * a plugin theme's translucent color by flattening it onto the host palette.
+ * Windows 11's DWM corner path and the fork's macOS window require an opaque
+ * top-level surface. Flatten plugin colors onto the host palette.
  */
 function toOpaqueElectronBackgroundColor(color: string, fallbackColor: string): string {
   if (!isWindowBackgroundColor(color) || !isWindowBackgroundColor(fallbackColor)) {

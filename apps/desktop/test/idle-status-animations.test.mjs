@@ -5,11 +5,11 @@ import { loadStylesSync } from "./helpers/styles.mjs";
 /**
  * Idle status indicators must not keep submitting frames.
  *
- * Any continuously animating indicator keeps the window surface dirty, and the
- * macOS window is `transparent: true` over the native `sidebar` vibrancy
- * material, so it is re-composited every frame it stays dirty: a 7px dot is
- * enough to drive WindowServer GPU to ~70% on an otherwise idle desktop. See
- * issue #1064 and `04-ux/07-ui-design-system.md` (sidebar status marks).
+ * Any continuously animating indicator keeps the window surface dirty, so the
+ * compositor submits a frame every vsync even on an otherwise idle desktop.
+ * Before the main window became opaque (see macos-sidebar-vibrancy.test.mjs)
+ * a 7px dot drove WindowServer GPU to ~70%. See issue #1064 and
+ * `04-ux/07-ui-design-system.md` (sidebar status marks).
  */
 
 const styles = loadStylesSync();

@@ -3240,7 +3240,7 @@ identify the platform validation still needed.
 
 - **Preconditions**: App running windowed on Windows with the OS in light mode.
 - **Steps**: 1) Select Dark in Settings → General → Appearance. 2) Inspect the lower-left, lower-right, and resize edges while the shell settles and while collapsing/expanding the sidebar. 3) Select Light and repeat. 4) Switch the OS color preference and select System; repeat after the app resolves the system theme.
-- **Expected**: The native BrowserWindow background follows the resolved application theme (`#181818` for dark and `#ffffff` for light), so no white strip appears around the frameless renderer during theme changes or shell animations. macOS keeps its transparent vibrancy behavior unchanged.
+- **Expected**: The native BrowserWindow background follows the resolved application theme (`#181818` for dark and `#ffffff` for light), so no white strip appears around the frameless renderer during theme changes or shell animations. The fork's macOS window is also opaque and follows the theme, without native vibrancy.
 - **Specs linked**: `04-ux/06-settings-ia.md`, `02-architecture/01-architecture.md`
 - **Acceptance**: A (core shell)
 - **Milestone**: M5
@@ -6376,7 +6376,7 @@ must keep splitting are covered by `markdown-blocks.test.mjs`.
   - Escape and outside click dismiss the menu without creating anything.
 
 #### E2E-076: Startup splash appears then yields to the main shell
-- **Status**: Partially automated (`startup-splash-motion.test.mjs` covers splash markup, motion tokens, reduced-motion, and catalog keys; `macos-sidebar-vibrancy.test.mjs` covers the darwin glass splash and shell cross-fade; full window timing remains Draft)
+- **Status**: Partially automated (`startup-splash-motion.test.mjs` covers splash markup, motion tokens, reduced-motion, and catalog keys; `macos-sidebar-vibrancy.test.mjs` covers the fork's opaque splash and shell; full window timing remains Draft)
 - **Priority**: P1
 - **Covers**: A, Quality / US-UI shell polish
 - **Preconditions**: App launch path available (dev or packaged).
@@ -6385,13 +6385,13 @@ must keep splitting are covered by `markdown-blocks.test.mjs`.
   2. Observe the first painted renderer surface before bootstrap completes.
   3. Wait until sessions/settings bootstrap finishes.
   4. Repeat with OS `prefers-reduced-motion: reduce` when available.
-  5. On macOS, compare the splash surface with the sidebar glass after the shell appears.
+  5. On macOS, confirm the splash and shell remain opaque without native vibrancy.
   6. Repeat with `bootstrap` held unanswered past the watchdog bounds, and observe the boot surface at 30s and after 180s (issue #831).
 - **Expected**:
   - Before ready: full-window splash with brand mark, shell name, tagline, and accessible starting status (`data-testid="startup-splash"`).
   - After ready: splash exits with a short fade (or instantly under reduced motion) and the main shell (or settings page) is interactive underneath.
   - If the initial state never arrives, the splash is replaced rather than held: the boot surface gains logs, diagnostics, and quit at 30s (`STARTUP_SLOW_HINT_MS`) without reporting a failure, and at 180s (`STARTUP_STALLED_MS`) becomes the recovery surface, which also offers a retry (`data-testid="startup-recovery"`); every action works without a backend, the renderer-drawn window controls stay above the surface on Windows/Linux, and quit goes through `pi-desktop/app/quit`.
-  - On macOS the splash uses the same glass tint and sheen as the sidebar over native `sidebar` vibrancy; the mounted shell stays hidden until the splash exit fade, then cross-fades in. Other platforms keep the opaque `--ds-bg-primary` fill.
+  - The fork uses the opaque `--ds-bg-primary` splash fill on macOS too, without sidebar glass or native vibrancy; existing startup feedback and exit timing are preserved.
   - No plain unbranded “Starting…” centered text as the only boot UI.
   - Overlay/dialog enter motion uses shared tokens; reduced motion keeps state changes without decorative duration.
   - If a non-settings bootstrap request fails while the settings read is still
@@ -7218,6 +7218,9 @@ must keep splitting are covered by `markdown-blocks.test.mjs`.
   12. After a recovered tool response, keep the next response failing. Verify
       it receives ten fresh retries and terminates once with `retryAttempt: 10`.
       Restore the fixture, click Continue, and verify completion in the UI.
+  13. With `PI_DESKTOP_STREAM_IDLE_TIMEOUT_MS` unset, hold a provider response
+      silent for four minutes, then release its answer. Repeat for a builtin
+      subagent. Repeat once more and press Stop while the response is silent.
 - **Expected**:
   - `terminated` is classified as `STREAM_FAILED`, and an upstream gateway
     `502`/`503`/`504` as retryable `PROVIDER_ERROR`.
@@ -7262,6 +7265,10 @@ must keep splitting are covered by `markdown-blocks.test.mjs`.
     above. Infinite mode changes no classification and only removes the retry
     ceiling for admitted network/transient failures; it remains abortable and
     is visibly marked with an unbounded retry indicator.
+  - A silent response has no default three-minute cutoff: the original request
+    completes without replay, duplicate billing, or a terminal error. Stop still
+    cancels the pending request. An explicit positive environment override may
+    enable the idle watchdog; tool execution budgets are unchanged.
 - **Specs linked**: `03-runtime/01-ipc-protocol.md`,
   `03-runtime/02-agent-runtime.md`, `03-runtime/08-error-codes.md`,
   `08-meta/decisions-log.md` (D186, D259, D378), ADR 0050, ADR 0128, ADR 0206
@@ -7273,6 +7280,9 @@ must keep splitting are covered by `markdown-blocks.test.mjs`.
   and eleven-tool-round recovery run in `scripts/e2e-provider-recovery.mjs`.
   Existing classification coverage: `agent-errors.test.ts`,
   `provider-retry.test.ts`, `runtime.test.ts`, `subagent.test.ts`.
+  Four-minute silent completion for sessions/subagents and Stop while silent
+  are covered by `provider-recovery-flow.test.ts` using controlled clocks and
+  the real provider adapter/agent loop; the full Desktop silence variant is Draft.
   Other scenario variants remain Draft.
 
 #### E2E-1174: Return a paired tool denial in Plan/Goal
@@ -10958,6 +10968,32 @@ This test plan spec is accepted when:
   plan-mode chip, or the warning dot has an active animation, and recording an
   otherwise idle native macOS window shows no continuous frames from them.
   Under reduced motion all three are static from the first painted frame.
+- Keep a long-running transcript visible with Working dots, an active tool label,
+  a creating subagent, a run-row status dot, a tool spinner, and a streaming
+  cursor. Repeat with a live scheduled task. Each decorative animation plays
+  twice and settles within 3.2 seconds (including the Working-dot stagger).
+  Labels, elapsed time, Stop controls, streamed text, and task outcomes remain
+  available; updating text or elapsed time does not restart the animation.
+  Enter a new running state and confirm the short cue can replay. Repeat under
+  reduced motion: markers are static from the first frame. Preserve window
+  glass, geometry, colors, and task execution. Automation:
+  `node --test apps/desktop/test/bounded-work-animations.test.mjs` and
+  `node scripts/test-bounded-work-animations.mjs` (Chrome/Chromium required;
+  override with `CHROME_BIN`). The isolated browser fixture verifies animation
+  lifecycles, not native vibrancy or whole-system GPU utilization. Native macOS
+  GPU comparison remains a separate manual check.
+- Fork follow-up: open empty home in both themes and confirm only the static
+  first-frame artwork loads. Exercise model discovery, plugin installation,
+  settings toggles, startup, voice and Mermaid loading: decorative motion is
+  bounded to two cycles while status remains visible. Switch away from a
+  running retained pane and confirm descendant/pseudo animations are paused,
+  without dropping scroll state. Run `fork-idle-motion.test.mjs` and the
+  Chromium fixture. This does not certify plugin-owned animations or native
+  GPU performance. For the ad-hoc macOS artifact, verify `PI-Desktop Fork.app`
+  identity, sealed signature, Rust signature and usage description; then test
+  actual LAN provider access with upstream quit. No OS grant is assumed from
+  signing/plist checks. Gatekeeper and LAN authorization remain on-device
+  checks; Developer ID/notarization require Apple-issued credentials.
 
 ### US-UI-68 Session-scoped inline permissions and artifacts (D138/D142)
 - Run two sessions concurrently and keep A visible while B reaches a tool
@@ -11041,26 +11077,20 @@ This test plan spec is accepted when:
 - **Milestone**: M5
 - **Status**: Partially automated (renderer style/source contract)
 
-### US-UI-74 macOS native sidebar vibrancy
-- Open the desktop app on macOS in both light and dark appearances with the
-  sidebar expanded, then exercise the existing collapse/expand path.
-- Expect the main window to use native `sidebar` vibrancy with a thin
-  theme tint behind `.sidebar` and any rendered `.sidebar-rail`: the material
-  follows the app theme (`nativeTheme.themeSource`), so a dark shell stays on a
-  dark plate and a light shell stays on a light plate. Desktop content stays
-  perceptible through the material and the surface carries a top-to-bottom
-  sheen rather than a flat fill. The dock carries no seam or hairline — the
-  glass meets the opaque main pane flush, so no hard divider separates the two
-  panes. Switching language or other non-theme settings does not rebuild the
-  glass. Disabling or uninstalling a selected plugin theme returns native
-  chrome to `system`.
-- Expect `.main-pane`, `.main-titlebar`, and `.conversation-topbar` to remain
-  solid theme surfaces without whole-window transparency or a strong artificial
-  blur/card treatment. Sidebar collapse/expand, resize, traffic-light placement,
-  and drag/no-drag hit regions remain unchanged.
-- **Specs linked**: `04-ux/08-component-spec.md` §1.7, §3.4; decisions-log D304 / D348
+### US-UI-74 Fork macOS opaque window and upstream platform compatibility
+- Open the fork on macOS in light, dark, and a plugin theme with an alpha
+  background; exercise sidebar collapse/expand and remove the plugin theme.
+- Expect an opaque main window without native vibrancy. Creation and theme
+  changes flatten plugin alpha colors over the built-in background; removing
+  the plugin restores the normal theme. Traffic lights, resize, drag regions,
+  and existing startup timing remain unchanged.
+- Windows retains upstream Windows 11 DWM corners and earlier Windows content
+  surface behavior; the macOS override must not replace those platform paths.
+- **Specs linked**: `04-ux/07-ui-design-system.md` §10.1.
 - **Milestone**: M6
-- **Status**: Partially automated (`macos-sidebar-vibrancy.test.mjs` source contract); native visual verification Draft
+- **Status**: Automated helper/source contracts in `window-background.test.mjs`,
+  `window-native-corners.test.mjs`, `window-background-theme.test.mjs`, and
+  `macos-sidebar-vibrancy.test.mjs`; native visual/GPU verification pending.
 
 ### US-UI-75 Light message-edit plate
 - Open a populated transcript in light and dark themes and choose Edit on a
