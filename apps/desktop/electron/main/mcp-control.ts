@@ -241,6 +241,7 @@ const CONTROL_OPERATION_SPECS: OperationSpec[] = [
   spec("scheduledList", "scheduled/list", "List scheduled tasks.", "read", []),
   spec("toolResolvePermission", "tool/resolvePermission", "Resolve a pending tool permission request.", "dangerous", ["resolution"]),
   spec("askToolResolve", "agent/askTool/resolve", "Answer an Agent question.", "dangerous", ["resolution"]),
+  spec("pendingInteractive", "agent/pendingInteractive", "List a session's pending tool permissions and Agent questions.", "read", ["input"]),
   spec("plansPending", "plans/pending", "List pending Plan or Goal approvals.", "read", ["input"]),
   spec("plansResolve", "plans/resolve", "Approve or reject a Plan or Goal checkpoint.", "dangerous", ["resolution"]),
   spec("pluginList", "plugin/list", "List installed plugins.", "read", []),

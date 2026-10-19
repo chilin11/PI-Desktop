@@ -795,6 +795,18 @@ test("the reviewed catalog never includes picker or secret-write channels", () =
   assert.deepEqual(ids, ["app/getVersion", "project/set", "session/configure"].sort());
 });
 
+test("pending interactive requests are readable so a remote client can resolve them", () => {
+  const operations = createMcpControlOperations({
+    pendingInteractive: "pi-desktop/agent/pendingInteractive",
+    toolResolvePermission: "pi-desktop/tool/resolvePermission",
+  });
+  const pending = operations.find((operation) => operation.id === "agent/pendingInteractive");
+  assert.equal(pending?.channel, "pi-desktop/agent/pendingInteractive");
+  assert.equal(pending?.risk, "read");
+  // Reading stays harmless; answering still needs the dangerous-operation acknowledgement.
+  assert.equal(operations.find((operation) => operation.id === "tool/resolvePermission")?.risk, "dangerous");
+});
+
 test("plugin-only session collaboration operations stay off the external MCP surface", async (t) => {
   const dataDir = mkdtempSync(join(tmpdir(), "pi-mcp-plugin-only-"));
   const calls = [];
