@@ -807,6 +807,21 @@ test("pending interactive requests are readable so a remote client can resolve t
   assert.equal(operations.find((operation) => operation.id === "tool/resolvePermission")?.risk, "dangerous");
 });
 
+test("running turns accept steering and queued prompts from the control plane", () => {
+  const operations = createMcpControlOperations({
+    agentSteer: "pi-desktop/agent/steer",
+    agentQueuePush: "pi-desktop/agent/queue/push",
+    agentQueueList: "pi-desktop/agent/queue/list",
+    agentQueueRemove: "pi-desktop/agent/queue/remove",
+  });
+  const byId = Object.fromEntries(operations.map((operation) => [operation.id, operation]));
+  assert.equal(byId["agent/steer"]?.channel, "pi-desktop/agent/steer");
+  assert.equal(byId["agent/steer"]?.risk, "write");
+  assert.equal(byId["agent/queue/push"]?.channel, "pi-desktop/agent/queue/push");
+  assert.equal(byId["agent/queue/list"]?.risk, "read");
+  assert.equal(byId["agent/queue/remove"]?.risk, "write");
+});
+
 test("plugin-only session collaboration operations stay off the external MCP surface", async (t) => {
   const dataDir = mkdtempSync(join(tmpdir(), "pi-mcp-plugin-only-"));
   const calls = [];
